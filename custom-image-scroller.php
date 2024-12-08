@@ -2,11 +2,11 @@
 /*
 Plugin Name: Custom Image Scroller
 Description: A plugin to create and manage image scrollers with ACF fields.
-Version: 1.2
+Version: 1.3
 Author: Birdhouse Web Design
 */
 
-// Define constants for plugin paths
+// Define constants for plugin paths for app
 define('CIS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CIS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
