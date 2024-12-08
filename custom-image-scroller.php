@@ -28,7 +28,7 @@ function cis_missing_acf_notice() {
 
 // Include necessary files
 if (class_exists('ACF')) {
-    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
+    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logics 
     require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
 
     if (file_exists(CIS_PLUGIN_DIR . 'includes/acf-fields.php')) {
