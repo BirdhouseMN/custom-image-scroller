@@ -28,11 +28,11 @@ function cis_missing_acf_notice() {
 
 // Include necessary files
 if (class_exists('ACF')) {
-    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type
-    require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode Logic
+    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
+    require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
 
     if (file_exists(CIS_PLUGIN_DIR . 'includes/acf-fields.php')) {
-        require_once CIS_PLUGIN_DIR . 'includes/acf-fields.php'; // ACF Field Registration
+        require_once CIS_PLUGIN_DIR . 'includes/acf-fields.php'; // ACF field registration
     }
     
     // Enqueue CSS and JavaScript
@@ -42,3 +42,18 @@ if (class_exists('ACF')) {
     }
     add_action('wp_enqueue_scripts', 'cis_enqueue_assets');
 }
+
+// Include the Plugin Update Checker library
+require_once plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+// Initialize the update checker
+$updateChecker = PucFactory::buildUpdateChecker(
+    'https://github.com/BirdhouseMN/custom-image-scroller', // GitHub repository URL
+    __FILE__,                                              // Main plugin file
+    'custom-image-scroller'                                // Plugin slug
+);
+
+// Optional: Set the branch to use for updates
+$updateChecker->setBranch('main');
