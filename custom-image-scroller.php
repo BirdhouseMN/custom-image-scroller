@@ -44,7 +44,7 @@ if (class_exists('ACF')) {
 }
 
 // Include the Plugin Update Checker library
-require_once plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
+require_once plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker/plugin-update-checker.php';
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
