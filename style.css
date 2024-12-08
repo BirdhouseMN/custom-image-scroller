@@ -1,0 +1,67 @@
+/* =====================
+Image Scroller Styles
+===================== */
+
+.scrolling-images-wrap {
+    position: relative;
+    overflow: hidden;
+    cursor: url('/wp-content/uploads/2024/12/white-star-2-01.svg'), auto;
+}
+
+.scrolling-images-wrap:hover {
+    cursor: url('/wp-content/uploads/2024/12/white-star-2-01.svg'), auto;
+}
+
+.scrolling-images-wrap.dragging {
+    cursor: url('/wp-content/uploads/2024/12/white-star-2-01.svg'), auto;
+}
+
+/* Vertical Layout */
+.scroll-vertical.scrolling-images-wrap {
+    height: 70vh;
+    white-space: normal;
+    overflow: hidden;
+}
+
+.scroll-vertical .image-row {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+.scroll-vertical .image-row img {
+    width: 100%;
+    max-height: 650px;
+    height: auto;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+    margin: 10px auto;
+    border-radius: 10px;
+}
+
+/* Horizontal Layout */
+.scroll-horizontal.scrolling-images-wrap {
+    width: 100%;
+    height: auto;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.scroll-horizontal .image-row {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+    text-align: center;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.scroll-horizontal .image-row img {
+    width: auto;
+    height: 100%;
+    max-height: 500px;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+    margin: 10px;
+    border-radius: 10px;
+}
