@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom Image Scroller
 Description: A plugin to create and manage image scrollers with ACF fields.
-Version: 1.4
+Version: 1.3
 Author: Birdhouse Web Design
 */
 
