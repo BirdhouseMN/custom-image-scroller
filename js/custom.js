@@ -1,3 +1,5 @@
+jQuery(document).ready(function($) {
+
 /* ====================
 IMAGE SCROLLERS APPLICATION
 ======================= */
@@ -123,4 +125,7 @@ $imageContainers.each(function () {
     }
 
     scrollContainer();
+});
+
+
 });
