@@ -6,7 +6,7 @@ Version: 1.4.2
 Author: Birdhouse Web Design
 */
 
-// Define constants for plugin paths for app
+// Define constants for plugin paths
 define('CIS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CIS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -26,21 +26,32 @@ function cis_missing_acf_notice() {
     </div>';
 }
 
+// Enqueue plugin assets
+function cis_enqueue_assets() {
+    wp_enqueue_style('cis-styles', CIS_PLUGIN_URL . 'css/style.css');
+    wp_enqueue_script('cis-scripts', CIS_PLUGIN_URL . 'js/custom.js', ['jquery'], null, true);
+}
+add_action('wp_enqueue_scripts', 'cis_enqueue_assets');
+
+// Define dynamic CSS variable for the SVG cursor
+add_action('wp_head', function () {
+    ?>
+    <style>
+        :root {
+            --white-star-svg: url('<?php echo plugin_dir_url(__FILE__) . 'assets/images/white-star-2-01.svg'; ?>');
+        }
+    </style>
+    <?php
+});
+
 // Include necessary files
 if (class_exists('ACF')) {
-    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logics 
+    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
     require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
 
     if (file_exists(CIS_PLUGIN_DIR . 'includes/acf-fields.php')) {
         require_once CIS_PLUGIN_DIR . 'includes/acf-fields.php'; // ACF field registration
     }
-    
-    // Enqueue CSS and JavaScript
-    function cis_enqueue_assets() {
-        wp_enqueue_style('cis-styles', CIS_PLUGIN_URL . 'css/style.css');
-        wp_enqueue_script('cis-scripts', CIS_PLUGIN_URL . 'js/custom.js', ['jquery'], null, true);
-    }
-    add_action('wp_enqueue_scripts', 'cis_enqueue_assets');
 }
 
 // Include the Plugin Update Checker library
@@ -56,4 +67,4 @@ $updateChecker = PucFactory::buildUpdateChecker(
 );
 
 // Optional: Set the branch to use for updates
-$updateChecker->setBranch('main');
+$updateChecker->setBranch('main'); // Ensure this matches your release branch

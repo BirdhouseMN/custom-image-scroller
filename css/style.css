@@ -1,19 +1,18 @@
 /* ====================
 IMAGE SCROLLERS STYLES
 ======================= */
-
 .scrolling-images-wrap {
     position: relative;
     overflow: hidden;
-    cursor: url('/wp-content/uploads/2024/11/white-star-2-01.svg'), auto;
+    cursor: var(--white-star-svg), auto;
 }
 
 .scrolling-images-wrap:hover {
-    cursor: url('/wp-content/uploads/2024/11/white-star-2-01.svg'), auto;
+    cursor: var(--white-star-svg), auto;
 }
 
 .scrolling-images-wrap.dragging {
-    cursor: url('/wp-content/uploads/2024/11/white-star-2-01.svg'), auto;
+    cursor: var(--white-star-svg), auto;
 }
 
 /* Vertical Layout */
