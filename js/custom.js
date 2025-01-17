@@ -1,102 +1,126 @@
-jQuery(document).ready(function($) {
+/* ====================
+IMAGE SCROLLERS APPLICATION
+======================= */
 
-    // Select all scrolling image containers
-    var $imageContainers = $('.scrolling-images-wrap');
+var $imageContainers = $('.scrolling-images-wrap');
 
-    $imageContainers.each(function() {
-        var $container = $(this);
-        var isHorizontal = $container.hasClass('scroll-horizontal');
-        var isVertical = $container.hasClass('scroll-vertical');
+$imageContainers.each(function () {
+    var $container = $(this);
+    var hasHorizontalClass = $container.hasClass('scroll-horizontal');
+    var hasVerticalClass = $container.hasClass('scroll-vertical');
+    let baseSpeed = 0.15;
+    let hoverSpeed = baseSpeed * 2;
+    let currentSpeed = baseSpeed;
+    let imageScrollPosition = 0;
 
-        // State variables
-        let autoSpeed = 0.15; // Auto-scroll speed
-        let isDragging = false;
-        let isMomentumActive = false;
-        let lastMousePos = 0;
-        let lastScrollPos = 0;
-        let velocity = 0;
+    // Initialize slides for infinite scrolling
+    function initializeSlides() {
+        const $slides = $container.children('.image-row');
+
+        // Check if valid images exist
+        if ($slides.length === 0) {
+            console.error("No images found in the container for scroller ID: " + $container.data('scroller-id'));
+            $container.html('<p>No images to display. Please add images in the admin panel.</p>');
+            return;
+        }
+
+        // Clear old content and re-add valid images
+        $container.empty();
+        $slides.each(function () {
+            const $slide = $(this).clone();
+            $container.append($slide); // Append original slides
+        });
 
         // Clone slides for infinite scrolling
-        function cloneSlides() {
-            const $slides = $container.children('.image-row');
-            for (let i = 0; i < 2; i++) {
-                $slides.clone().appendTo($container);
-            }
+        for (let i = 0; i < 2; i++) {
+            $slides.each(function () {
+                const $clone = $(this).clone();
+                $container.append($clone);
+            });
         }
+    }
 
-        // Automatic scrolling
-        function scrollContainer() {
-            if (isMomentumActive || isDragging) return;
+    initializeSlides();
 
-            lastScrollPos += autoSpeed;
-
-            if (isHorizontal) {
-                const maxScroll = $container[0].scrollWidth / 3;
-                $container.scrollLeft(lastScrollPos % maxScroll);
-            } else if (isVertical) {
-                const maxScroll = $container[0].scrollHeight / 3;
-                $container.scrollTop(lastScrollPos % maxScroll);
-            }
-
-            requestAnimationFrame(scrollContainer);
+    // Hover effects to adjust scrolling speed
+    $container.hover(
+        function () {
+            currentSpeed = hoverSpeed;
+        },
+        function () {
+            currentSpeed = baseSpeed;
         }
+    );
 
-        // Start dragging event
-        function startDrag(e) {
-            isDragging = true;
-            isMomentumActive = false;
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
 
-            const event = e.type === 'mousedown' ? e : e.touches[0];
-            lastMousePos = isHorizontal
-                ? event.pageX - $container.offset().left
-                : event.pageY - $container.offset().top;
+    // Handle both mouse and touch events for drag functionality
+    function startDrag(e) {
+        isDragging = true;
+        const event = e.type === 'mousedown' ? e : e.touches[0];
+        startX = event.pageX - $container.offset().left;
+        startY = event.pageY - $container.offset().top;
+        scrollLeft = $container.scrollLeft();
+        scrollTop = $container.scrollTop();
+        $container.addClass('dragging');
+        e.preventDefault();
+    }
 
-            lastScrollPos = isHorizontal
-                ? $container.scrollLeft()
-                : $container.scrollTop();
+    function onDrag(e) {
+        if (!isDragging) return;
+        const event = e.type === 'mousemove' ? e : e.touches[0];
+        const x = event.pageX - $container.offset().left;
+        const y = event.pageY - $container.offset().top;
+        const walkX = startX - x;
+        const walkY = startY - y;
 
-            velocity = 0; // Reset velocity
-            e.preventDefault();
-        }
+        if (hasHorizontalClass) $container.scrollLeft(scrollLeft + walkX);
+        if (hasVerticalClass) $container.scrollTop(scrollTop + walkY);
+    }
 
-        // Dragging event
-        function onDrag(e) {
-            if (!isDragging) return;
-
-            const event = e.type === 'mousemove' ? e : e.touches[0];
-            const currentMousePos = isHorizontal
-                ? event.pageX - $container.offset().left
-                : event.pageY - $container.offset().top;
-
-            const delta = currentMousePos - lastMousePos;
-
-            lastMousePos = currentMousePos;
-
-            if (isHorizontal) {
-                lastScrollPos = $container.scrollLeft() - delta;
-                $container.scrollLeft(lastScrollPos);
-            } else {
-                lastScrollPos = $container.scrollTop() - delta;
-                $container.scrollTop(lastScrollPos);
-            }
-        }
-
-        // End dragging event
-        function endDrag() {
-            if (!isDragging) return;
+    function endDrag() {
+        if (isDragging) {
             isDragging = false;
+            $container.removeClass('dragging');
+            if (hasHorizontalClass) {
+                imageScrollPosition = $container.scrollLeft();
+            } else if (hasVerticalClass) {
+                imageScrollPosition = $container.scrollTop();
+            }
+            scrollContainer(); // Resume auto-scroll
         }
+    }
 
-        // Attach events to enable drag and scroll
-        function setupEvents() {
-            $container.on('mousedown touchstart', startDrag);
-            $(document).on('mousemove touchmove', onDrag);
-            $(document).on('mouseup touchend touchcancel', endDrag);
+    $container.on('mousedown touchstart', startDrag);
+    $(document).on('mousemove touchmove', onDrag);
+    $(document).on('mouseup touchend touchcancel', endDrag);
+
+    // Auto-scroll functionality
+    function scrollContainer() {
+        if (isDragging) return; // Disable auto-scroll while dragging
+
+        if (hasHorizontalClass) {
+            imageScrollPosition += currentSpeed;
+            $container.scrollLeft(imageScrollPosition);
+
+            const scrollWidth = $container[0].scrollWidth / 3;
+            if (imageScrollPosition >= scrollWidth) {
+                imageScrollPosition -= scrollWidth;
+                $container.scrollLeft(imageScrollPosition);
+            }
+        } else if (hasVerticalClass) {
+            imageScrollPosition += currentSpeed;
+            $container.scrollTop(imageScrollPosition);
+
+            const scrollHeight = $container[0].scrollHeight / 3;
+            if (imageScrollPosition >= scrollHeight) {
+                imageScrollPosition -= scrollHeight;
+                $container.scrollTop(imageScrollPosition);
+            }
         }
+        requestAnimationFrame(scrollContainer);
+    }
 
-        // Initialize the scroller
-        cloneSlides();
-        setupEvents();
-        scrollContainer();
-    });
+    scrollContainer();
 });
