@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: Birdhouse Web Design
  */
 
@@ -25,7 +25,7 @@ add_action('plugins_loaded', 'cis_check_acf_dependency');
 
 function cis_missing_acf_notice() {
     echo '<div class="notice notice-error">
-        <p><strong>Custom Image Scroller:</strong> Advanced Custom Fields (ACF) Pro is required for this plugin to work. Please install and activate ACF Pro.</p>
+        <p><strong>Custom Image Scroller:</strong> This plugin requires <a href="https://www.advancedcustomfields.com/pro/" target="_blank">Advanced Custom Fields Pro</a> to work. Please install and activate ACF Pro.</p>
     </div>';
 }
 
@@ -102,12 +102,24 @@ function cis_render_settings_page() {
     ?>
     <div class="wrap">
         <h1>Custom Image Scroller Settings</h1>
-        <form method="post" action="options.php">
+        <form method="post" action="">
             <?php
             settings_fields('cis_settings_group');
             do_settings_sections('custom-image-scroller');
             submit_button();
             ?>
+        </form>
+        <hr>
+        <h2>ACF Field Management</h2>
+        <form method="post" action="">
+            <?php
+            if (isset($_POST['register_acf_fields'])) {
+                cis_register_acf_fields();
+                echo '<div class="notice notice-success"><p>ACF fields have been updated successfully.</p></div>';
+            }
+            ?>
+            <input type="hidden" name="register_acf_fields" value="1">
+            <button type="submit" class="button button-primary">Update ACF Fields</button>
         </form>
     </div>
     <?php
@@ -178,3 +190,4 @@ $updateChecker = PucFactory::buildUpdateChecker(
 
 // Optional: Set the branch to use for updates
 $updateChecker->setBranch('main'); // Ensure this matches your release branch
+
