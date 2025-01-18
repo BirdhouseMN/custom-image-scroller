@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.0.4
+ * Version: 3.1.0
  * Author: Birdhouse Web Design
  */
 
@@ -87,16 +87,17 @@ add_action('acf/init', function () {
 /* ====================
 ADMIN SETTINGS FOR PLUGIN CLEANUP
 ======================= */
-function cis_add_settings_menu() {
-    add_options_page(
-        'Custom Image Scroller Settings',
-        'Image Scroller',
-        'manage_options',
-        'custom-image-scroller',
-        'cis_render_settings_page'
+function cis_add_settings_to_cpt() {
+    add_submenu_page(
+        'edit.php?post_type=image_scroller', // Parent menu slug
+        'Image Scroller Settings', // Page title
+        'Settings', // Menu title
+        'manage_options', // Capability
+        'custom-image-scroller', // Menu slug
+        'cis_render_settings_page' // Callback function
     );
 }
-add_action('admin_menu', 'cis_add_settings_menu');
+add_action('admin_menu', 'cis_add_settings_to_cpt');
 
 function cis_render_settings_page() {
     ?>
@@ -114,8 +115,12 @@ function cis_render_settings_page() {
         <form method="post" action="">
             <?php
             if (isset($_POST['register_acf_fields'])) {
-                cis_register_acf_fields();
-                echo '<div class="notice notice-success"><p>ACF fields have been updated successfully.</p></div>';
+                if (class_exists('ACF')) {
+                    cis_register_acf_fields();
+                    echo '<div class="notice notice-success"><p>ACF fields have been updated successfully.</p></div>';
+                } else {
+                    echo '<div class="notice notice-error"><p>ACF Pro is not active. Fields cannot be updated.</p></div>';
+                }
             }
             ?>
             <input type="hidden" name="register_acf_fields" value="1">
@@ -126,13 +131,18 @@ function cis_render_settings_page() {
 }
 
 function cis_register_settings() {
-    register_setting('cis_settings_group', 'cis_cleanup_on_delete');
+    register_setting('cis_settings_group', 'cis_cleanup_on_delete', [
+        'type' => 'string',
+        'default' => 'no',
+    ]);
+
     add_settings_section(
         'cis_general_settings',
         'General Settings',
         null,
         'custom-image-scroller'
     );
+
     add_settings_field(
         'cis_cleanup_on_delete',
         'Remove Data on Plugin Delete',
@@ -160,6 +170,14 @@ function cis_handle_uninstall() {
             wp_delete_post($scroller->ID, true);
         }
         delete_option('cis_cleanup_on_delete');
+
+        // Remove ACF field group entries
+        if (class_exists('ACF') && function_exists('acf_delete_field_group')) {
+            $field_group = acf_get_field_group('group_scroller_fields');
+            if ($field_group) {
+                acf_delete_field_group($field_group['ID']);
+            }
+        }
     }
 }
 
