@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 2.1.2
+ * Version: 3.0.1
  * Author: Birdhouse Web Design
  */
 
@@ -68,6 +68,14 @@ function cis_register_acf_fields() {
         ));
     }
 }
+
+// Ensure ACF fields are registered on plugin activation or when ACF becomes active
+function cis_setup_acf_fields() {
+    if (class_exists('ACF') && function_exists('acf_add_local_field_group')) {
+        cis_register_acf_fields();
+    }
+}
+add_action('init', 'cis_setup_acf_fields');
 
 /* ====================
 ADMIN SETTINGS FOR PLUGIN CLEANUP
@@ -164,10 +172,3 @@ $updateChecker = PucFactory::buildUpdateChecker(
 // Optional: Set the branch to use for updates
 $updateChecker->setBranch('main'); // Ensure this matches your release branch
 
-// Ensure ACF fields are registered on plugin activation or when ACF becomes active
-function cis_setup_acf_fields() {
-    if (class_exists('ACF') && function_exists('acf_add_local_field_group')) {
-        cis_register_acf_fields();
-    }
-}
-add_action('init', 'cis_setup_acf_fields');
