@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.1.0
+ * Version: 3.4.1
  * Author: Birdhouse Web Design
  */
 
@@ -16,9 +16,6 @@ ACF DEPENDENCY CHECK
 function cis_check_acf_dependency() {
     if (!class_exists('ACF')) {
         add_action('admin_notices', 'cis_missing_acf_notice');
-    } else {
-        // Register ACF fields dynamically
-        cis_register_acf_fields();
     }
 }
 add_action('plugins_loaded', 'cis_check_acf_dependency');
@@ -30,58 +27,16 @@ function cis_missing_acf_notice() {
 }
 
 /* ====================
-REGISTER ACF FIELDS
+PRE-PACKAGED ACF FIELDS
 ======================= */
-function cis_register_acf_fields() {
-    if (!function_exists('acf_add_local_field_group')) {
-        return; // Abort if ACF Pro is not active
-    }
-
-    acf_add_local_field_group(array(
-        'key' => 'group_scroller_fields',
-        'title' => 'Scroller Fields',
-        'fields' => array(
-            array(
-                'key' => 'field_scroller_images',
-                'label' => 'Scroller Images',
-                'name' => 'scroller_images',
-                'type' => 'gallery',
-                'instructions' => 'Upload the images for your scroller.',
-                'required' => 1,
-            ),
-            array(
-                'key' => 'field_scrolling_direction',
-                'label' => 'Scrolling Direction',
-                'name' => 'scrolling_direction',
-                'type' => 'radio',
-                'choices' => array(
-                    'horizontal' => 'Horizontal',
-                    'vertical' => 'Vertical',
-                ),
-                'default_value' => 'horizontal',
-                'layout' => 'horizontal',
-            ),
-        ),
-        'location' => array(
-            array(
-                array(
-                    'param' => 'post_type',
-                    'operator' => '==',
-                    'value' => 'image_scroller',
-                ),
-            ),
-        ),
-    ));
-}
-
-// Debug logging for ACF field registration
-add_action('acf/init', function () {
-    if (function_exists('acf_add_local_field_group')) {
-        error_log('ACF field groups are being registered.');
-        cis_register_acf_fields();
+add_filter('acf/settings/load_json', function($paths) {
+    $acf_json_path = CIS_PLUGIN_DIR . 'acf-json';
+    if (is_dir($acf_json_path)) {
+        $paths[] = $acf_json_path;
     } else {
-        error_log('ACF Pro is not active, fields cannot be registered.');
+        error_log('ACF JSON folder not found: ' . $acf_json_path);
     }
+    return $paths;
 });
 
 /* ====================
@@ -103,7 +58,7 @@ function cis_render_settings_page() {
     ?>
     <div class="wrap">
         <h1>Custom Image Scroller Settings</h1>
-        <form method="post" action="">
+        <form method="post" action="options.php">
             <?php
             settings_fields('cis_settings_group');
             do_settings_sections('custom-image-scroller');
@@ -111,47 +66,41 @@ function cis_render_settings_page() {
             ?>
         </form>
         <hr>
-        <h2>ACF Field Management</h2>
-        <form method="post" action="">
-            <?php
-            if (isset($_POST['register_acf_fields'])) {
-                if (class_exists('ACF')) {
-                    cis_register_acf_fields();
-                    echo '<div class="notice notice-success"><p>ACF fields have been updated successfully.</p></div>';
-                } else {
-                    echo '<div class="notice notice-error"><p>ACF Pro is not active. Fields cannot be updated.</p></div>';
-                }
-            }
-            ?>
-            <input type="hidden" name="register_acf_fields" value="1">
-            <button type="submit" class="button button-primary">Update ACF Fields</button>
-        </form>
+        <h2>Notice</h2>
+        <p>ACF Pro is required for this plugin. Field groups are automatically managed and pre-packaged within the plugin. You do not need to manually configure fields in ACF.</p>
     </div>
     <?php
 }
 
 function cis_register_settings() {
-    register_setting('cis_settings_group', 'cis_cleanup_on_delete', [
-        'type' => 'string',
-        'default' => 'no',
-    ]);
+    register_setting(
+        'cis_settings_group', // Settings group
+        'cis_cleanup_on_delete', // Option name
+        [
+            'type' => 'string',
+            'default' => 'no',
+            'sanitize_callback' => function ($input) {
+                return ($input === 'yes') ? 'yes' : 'no';
+            },
+        ]
+    );
 
     add_settings_section(
-        'cis_general_settings',
-        'General Settings',
-        null,
-        'custom-image-scroller'
+        'cis_general_settings', // Section ID
+        'General Settings', // Section title
+        null, // Callback
+        'custom-image-scroller' // Page slug
     );
 
     add_settings_field(
-        'cis_cleanup_on_delete',
-        'Remove Data on Plugin Delete',
+        'cis_cleanup_on_delete', // Field ID
+        'Remove Data on Plugin Delete', // Field title
         function () {
             $value = get_option('cis_cleanup_on_delete', 'no');
             echo '<input type="checkbox" name="cis_cleanup_on_delete" value="yes" ' . checked('yes', $value, false) . '> Yes, delete all data when the plugin is removed.';
         },
-        'custom-image-scroller',
-        'cis_general_settings'
+        'custom-image-scroller', // Page slug
+        'cis_general_settings' // Section ID
     );
 }
 add_action('admin_init', 'cis_register_settings');

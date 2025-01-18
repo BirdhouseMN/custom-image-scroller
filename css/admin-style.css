@@ -1,0 +1,16 @@
+/* Custom Admin Styles */
+.wrap h1 {
+    color: #333;
+}
+
+.button-primary {
+    background-color: #007cba;
+    border-color: #007cba;
+}
+
+.button-primary:hover {
+    background-color: #005a9c;
+}
+body { 
+    border:  2px solid red;
+}
