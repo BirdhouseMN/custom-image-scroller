@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.0.3
+ * Version: 3.0.4
  * Author: Birdhouse Web Design
  */
 
@@ -145,6 +145,23 @@ function cis_register_settings() {
     );
 }
 add_action('admin_init', 'cis_register_settings');
+
+/* ====================
+UNINSTALL HOOK
+======================= */
+register_uninstall_hook(__FILE__, 'cis_handle_uninstall');
+
+function cis_handle_uninstall() {
+    $cleanup = get_option('cis_cleanup_on_delete', 'no');
+    if ($cleanup === 'yes') {
+        // Remove custom post types, options, and metadata
+        $scrollers = get_posts(array('post_type' => 'image_scroller', 'numberposts' => -1));
+        foreach ($scrollers as $scroller) {
+            wp_delete_post($scroller->ID, true);
+        }
+        delete_option('cis_cleanup_on_delete');
+    }
+}
 
 /* ====================
 ENQUEUE PLUGIN ASSETS
