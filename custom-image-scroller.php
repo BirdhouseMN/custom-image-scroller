@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 2.0.1
+ * Version: 2.1.0
  * Author: Birdhouse Web Design
  */
 
@@ -10,23 +10,115 @@
 define('CIS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CIS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Check for ACF dependency
+/* ====================
+ACF DEPENDENCY CHECK
+======================= */
 function cis_check_acf_dependency() {
     if (!class_exists('ACF')) {
         add_action('admin_notices', 'cis_missing_acf_notice');
-        deactivate_plugins(plugin_basename(__FILE__)); // Automatically deactivate the plugin
+    } else {
+        // Register ACF fields if ACF is active
+        cis_register_acf_fields();
     }
 }
-add_action('admin_init', 'cis_check_acf_dependency');
+add_action('plugins_loaded', 'cis_check_acf_dependency');
 
-// Admin notice for missing ACF
 function cis_missing_acf_notice() {
     echo '<div class="notice notice-error">
-        <p><strong>Custom Image Scroller:</strong> This plugin requires Advanced Custom Fields (ACF) to function. Please install and activate ACF.</p>
+        <p><strong>Custom Image Scroller:</strong> Advanced Custom Fields (ACF) is required for this plugin to work. Please install and activate ACF.</p>
     </div>';
 }
 
-// Enqueue plugin assets
+function cis_register_acf_fields() {
+    if (function_exists('acf_add_local_field_group')) {
+        acf_add_local_field_group(array(
+            'key' => 'group_scroller_fields',
+            'title' => 'Scroller Fields',
+            'fields' => array(
+                array(
+                    'key' => 'field_scroller_images',
+                    'label' => 'Scroller Images',
+                    'name' => 'scroller_images',
+                    'type' => 'gallery',
+                ),
+                array(
+                    'key' => 'field_scrolling_direction',
+                    'label' => 'Scrolling Direction',
+                    'name' => 'scrolling_direction',
+                    'type' => 'radio',
+                    'choices' => array(
+                        'horizontal' => 'Horizontal',
+                        'vertical' => 'Vertical',
+                    ),
+                    'default_value' => 'horizontal',
+                ),
+            ),
+            'location' => array(
+                array(
+                    array(
+                        'param' => 'post_type',
+                        'operator' => '==',
+                        'value' => 'image_scroller',
+                    ),
+                ),
+            ),
+        ));
+    }
+}
+
+/* ====================
+ADMIN SETTINGS FOR PLUGIN CLEANUP
+======================= */
+function cis_add_settings_menu() {
+    add_options_page(
+        'Custom Image Scroller Settings',
+        'Image Scroller',
+        'manage_options',
+        'custom-image-scroller',
+        'cis_render_settings_page'
+    );
+}
+add_action('admin_menu', 'cis_add_settings_menu');
+
+function cis_render_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>Custom Image Scroller Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('cis_settings_group');
+            do_settings_sections('custom-image-scroller');
+            submit_button();
+            ?>
+        </form>
+    </div>
+    <?php
+}
+
+function cis_register_settings() {
+    register_setting('cis_settings_group', 'cis_cleanup_on_delete');
+    add_settings_section(
+        'cis_general_settings',
+        'General Settings',
+        null,
+        'custom-image-scroller'
+    );
+    add_settings_field(
+        'cis_cleanup_on_delete',
+        'Remove Data on Plugin Delete',
+        function () {
+            $value = get_option('cis_cleanup_on_delete', 'no');
+            echo '<input type="checkbox" name="cis_cleanup_on_delete" value="yes" ' . checked('yes', $value, false) . '> Yes, delete all data when the plugin is removed.';
+        },
+        'custom-image-scroller',
+        'cis_general_settings'
+    );
+}
+add_action('admin_init', 'cis_register_settings');
+
+/* ====================
+ENQUEUE PLUGIN ASSETS
+======================= */
 function cis_enqueue_assets() {
     wp_enqueue_style('cis-styles', CIS_PLUGIN_URL . 'css/style.css');
     wp_enqueue_script('cis-scripts', CIS_PLUGIN_URL . 'js/custom.js', ['jquery'], null, true);
@@ -44,7 +136,9 @@ add_action('wp_head', function () {
     <?php
 });
 
-// Include necessary files
+/* ====================
+INCLUDE NECESSARY FILES
+======================= */
 if (class_exists('ACF')) {
     require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
     require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
@@ -54,7 +148,9 @@ if (class_exists('ACF')) {
     }
 }
 
-// Include the Plugin Update Checker library
+/* ====================
+PLUGIN UPDATE CHECKER
+======================= */
 require_once plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
