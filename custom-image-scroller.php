@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 2.1.0
+ * Version: 2.1.2
  * Author: Birdhouse Web Design
  */
 
@@ -17,7 +17,7 @@ function cis_check_acf_dependency() {
     if (!class_exists('ACF')) {
         add_action('admin_notices', 'cis_missing_acf_notice');
     } else {
-        // Register ACF fields if ACF is active
+        // Register ACF fields directly in this file
         cis_register_acf_fields();
     }
 }
@@ -29,6 +29,9 @@ function cis_missing_acf_notice() {
     </div>';
 }
 
+/* ====================
+REGISTER ACF FIELDS
+======================= */
 function cis_register_acf_fields() {
     if (function_exists('acf_add_local_field_group')) {
         acf_add_local_field_group(array(
@@ -142,10 +145,6 @@ INCLUDE NECESSARY FILES
 if (class_exists('ACF')) {
     require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
     require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
-
-    if (file_exists(CIS_PLUGIN_DIR . 'includes/acf-fields.php')) {
-        require_once CIS_PLUGIN_DIR . 'includes/acf-fields.php'; // ACF field registration
-    }
 }
 
 /* ====================
