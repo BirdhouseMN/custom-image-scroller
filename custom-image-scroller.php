@@ -1,10 +1,10 @@
 <?php
-/*
-Plugin Name: Custom Image Scroller
-Description: A plugin to create and manage image scrollers with ACF fields.
-Version: 2.0.1
-Author: Birdhouse Web Design
-*/
+/**
+ * Plugin Name: Custom Image Scroller
+ * Description: A plugin to create and manage image scrollers with ACF fields.
+ * Version: 2.0.1
+ * Author: Birdhouse Web Design
+ */
 
 // Define constants for plugin paths
 define('CIS_PLUGIN_DIR', plugin_dir_path(__FILE__));
