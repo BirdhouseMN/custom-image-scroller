@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: Birdhouse Web Design
  */
 
@@ -17,7 +17,7 @@ function cis_check_acf_dependency() {
     if (!class_exists('ACF')) {
         add_action('admin_notices', 'cis_missing_acf_notice');
     } else {
-        // Register ACF fields directly in this file
+        // Register ACF fields dynamically
         cis_register_acf_fields();
     }
 }
@@ -25,7 +25,7 @@ add_action('plugins_loaded', 'cis_check_acf_dependency');
 
 function cis_missing_acf_notice() {
     echo '<div class="notice notice-error">
-        <p><strong>Custom Image Scroller:</strong> Advanced Custom Fields (ACF) is required for this plugin to work. Please install and activate ACF.</p>
+        <p><strong>Custom Image Scroller:</strong> Advanced Custom Fields (ACF) Pro is required for this plugin to work. Please install and activate ACF Pro.</p>
     </div>';
 }
 
@@ -33,49 +33,56 @@ function cis_missing_acf_notice() {
 REGISTER ACF FIELDS
 ======================= */
 function cis_register_acf_fields() {
-    if (function_exists('acf_add_local_field_group')) {
-        acf_add_local_field_group(array(
-            'key' => 'group_scroller_fields',
-            'title' => 'Scroller Fields',
-            'fields' => array(
-                array(
-                    'key' => 'field_scroller_images',
-                    'label' => 'Scroller Images',
-                    'name' => 'scroller_images',
-                    'type' => 'gallery',
-                ),
-                array(
-                    'key' => 'field_scrolling_direction',
-                    'label' => 'Scrolling Direction',
-                    'name' => 'scrolling_direction',
-                    'type' => 'radio',
-                    'choices' => array(
-                        'horizontal' => 'Horizontal',
-                        'vertical' => 'Vertical',
-                    ),
-                    'default_value' => 'horizontal',
-                ),
-            ),
-            'location' => array(
-                array(
-                    array(
-                        'param' => 'post_type',
-                        'operator' => '==',
-                        'value' => 'image_scroller',
-                    ),
-                ),
-            ),
-        ));
+    if (!function_exists('acf_add_local_field_group')) {
+        return; // Abort if ACF Pro is not active
     }
+
+    acf_add_local_field_group(array(
+        'key' => 'group_scroller_fields',
+        'title' => 'Scroller Fields',
+        'fields' => array(
+            array(
+                'key' => 'field_scroller_images',
+                'label' => 'Scroller Images',
+                'name' => 'scroller_images',
+                'type' => 'gallery',
+                'instructions' => 'Upload the images for your scroller.',
+                'required' => 1,
+            ),
+            array(
+                'key' => 'field_scrolling_direction',
+                'label' => 'Scrolling Direction',
+                'name' => 'scrolling_direction',
+                'type' => 'radio',
+                'choices' => array(
+                    'horizontal' => 'Horizontal',
+                    'vertical' => 'Vertical',
+                ),
+                'default_value' => 'horizontal',
+                'layout' => 'horizontal',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'image_scroller',
+                ),
+            ),
+        ),
+    ));
 }
 
-// Ensure ACF fields are registered on plugin activation or when ACF becomes active
-function cis_setup_acf_fields() {
-    if (class_exists('ACF') && function_exists('acf_add_local_field_group')) {
+// Debug logging for ACF field registration
+add_action('acf/init', function () {
+    if (function_exists('acf_add_local_field_group')) {
+        error_log('ACF field groups are being registered.');
         cis_register_acf_fields();
+    } else {
+        error_log('ACF Pro is not active, fields cannot be registered.');
     }
-}
-add_action('init', 'cis_setup_acf_fields');
+});
 
 /* ====================
 ADMIN SETTINGS FOR PLUGIN CLEANUP
@@ -171,4 +178,3 @@ $updateChecker = PucFactory::buildUpdateChecker(
 
 // Optional: Set the branch to use for updates
 $updateChecker->setBranch('main'); // Ensure this matches your release branch
-
