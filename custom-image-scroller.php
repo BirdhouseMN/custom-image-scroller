@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.5.3
+ * Version: 3.5.4
  * Author: Birdhouse Web Design
  */
 
@@ -104,12 +104,12 @@ ADMIN SETTINGS FOR PLUGIN
 ======================= */
 function cis_add_settings_to_cpt() {
     add_submenu_page(
-        'edit.php?post_type=image_scroller',
-        'Image Scroller Settings',
-        'Settings',
-        'manage_options',
-        'custom-image-scroller',
-        'cis_render_settings_page'
+        'edit.php?post_type=image_scroller', // Parent menu slug
+        'Image Scroller Settings', // Page title
+        'Settings', // Menu title
+        'manage_options', // Capability
+        'custom-image-scroller', // Menu slug
+        'cis_render_settings_page' // Callback function
     );
 }
 add_action('admin_menu', 'cis_add_settings_to_cpt');
@@ -170,16 +170,29 @@ SYNC ACF FIELDS
 ======================= */
 add_action('admin_post_cis_sync_fields', function () {
     if (isset($_POST['cis_sync_fields']) && check_admin_referer('cis_sync_fields_action', 'cis_sync_fields_nonce')) {
-        $groups = acf_get_field_groups();
-        foreach ($groups as $group) {
-            if ($group['local'] === 'json') {
-                acf_import_field_group($group);
-                acf_update_field_group($group);
+        $json_path = CIS_PLUGIN_DIR . 'acf-json';
+        $imported = 0;
+
+        if (is_dir($json_path)) {
+            foreach (glob($json_path . '/*.json') as $file) {
+                $field_group = json_decode(file_get_contents($file), true);
+
+                if (json_last_error() === JSON_ERROR_NONE && isset($field_group['key'])) {
+                    acf_import_field_group($field_group);
+                    $imported++;
+                }
             }
         }
-        add_action('admin_notices', function () {
-            echo '<div class="notice notice-success is-dismissible"><p>ACF field groups synchronized successfully!</p></div>';
-        });
+
+        if ($imported > 0) {
+            add_action('admin_notices', function () use ($imported) {
+                echo '<div class="notice notice-success is-dismissible"><p>' . $imported . ' ACF field groups synchronized successfully!</p></div>';
+            });
+        } else {
+            add_action('admin_notices', function () {
+                echo '<div class="notice notice-error is-dismissible"><p>No valid ACF field groups were found to sync.</p></div>';
+            });
+        }
     }
 });
 
