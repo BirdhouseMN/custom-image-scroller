@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.5.2
+ * Version: 3.5.3
  * Author: Birdhouse Web Design
  */
 
@@ -29,53 +30,86 @@ function cis_missing_acf_notice() {
 /* ====================
 PRE-PACKAGED ACF FIELDS
 ======================= */
-add_filter('acf/settings/save_json', function($path) {
+add_filter('acf/settings/save_json', function ($path) {
     return CIS_PLUGIN_DIR . 'acf-json';
 });
 
-add_filter('acf/settings/load_json', function($paths) {
+add_filter('acf/settings/load_json', function ($paths) {
     $acf_json_path = CIS_PLUGIN_DIR . 'acf-json';
     if (is_dir($acf_json_path)) {
         $paths[] = $acf_json_path;
-    } else {
-        error_log('ACF JSON folder not found: ' . $acf_json_path);
     }
     return $paths;
 });
 
-add_action('admin_init', function () {
-    $groups = acf_get_field_groups();
-    $sync = [];
-
-    foreach ($groups as $group) {
-        $local = acf_maybe_get($group, 'local', false);
-        $modified = acf_maybe_get($group, 'modified', 0);
-        $private = acf_maybe_get($group, 'private', false);
-
-        if ($local === 'json' && !$private) {
-            if (!$group['ID'] || ($modified && $modified > get_post_modified_time('U', true, $group['ID'], true))) {
-                $sync[$group['key']] = $group;
-            }
-        }
-    }
-
-    foreach ($sync as $key => $group) {
-        acf_import_field_group($group);
-        error_log('ACF Field Group Synced: ' . $group['title']);
+// Fallback to register fields programmatically
+add_action('acf/init', function () {
+    if (function_exists('acf_add_local_field_group')) {
+        acf_add_local_field_group([
+            'key' => 'group_scroller_fields',
+            'title' => 'Scroller Fields',
+            'fields' => [
+                [
+                    'key' => 'field_672e6f670139b',
+                    'label' => 'Scroller Images',
+                    'name' => 'scroller_images',
+                    'type' => 'gallery',
+                    'return_format' => 'array',
+                    'library' => 'all',
+                    'preview_size' => 'medium',
+                ],
+                [
+                    'key' => 'field_672e6f9b0139c',
+                    'label' => 'Scrolling Direction',
+                    'name' => 'scrolling_direction',
+                    'type' => 'radio',
+                    'choices' => [
+                        'Horizontal' => 'Horizontal',
+                        'Vertical' => 'Vertical',
+                    ],
+                    'layout' => 'vertical',
+                ],
+            ],
+            'location' => [
+                [
+                    [
+                        'param' => 'post_type',
+                        'operator' => '==',
+                        'value' => 'image_scroller',
+                    ],
+                ],
+            ],
+        ]);
     }
 });
 
 /* ====================
-ADMIN SETTINGS FOR PLUGIN CLEANUP
+CUSTOM POST TYPE
+======================= */
+function cis_register_post_type() {
+    register_post_type('image_scroller', [
+        'labels' => [
+            'name' => 'Image Scrollers',
+            'singular_name' => 'Image Scroller',
+        ],
+        'public' => true,
+        'has_archive' => true,
+        'supports' => ['title', 'editor', 'thumbnail'],
+    ]);
+}
+add_action('init', 'cis_register_post_type');
+
+/* ====================
+ADMIN SETTINGS FOR PLUGIN
 ======================= */
 function cis_add_settings_to_cpt() {
     add_submenu_page(
-        'edit.php?post_type=image_scroller', // Parent menu slug
-        'Image Scroller Settings', // Page title
-        'Settings', // Menu title
-        'manage_options', // Capability
-        'custom-image-scroller', // Menu slug
-        'cis_render_settings_page' // Callback function
+        'edit.php?post_type=image_scroller',
+        'Image Scroller Settings',
+        'Settings',
+        'manage_options',
+        'custom-image-scroller',
+        'cis_render_settings_page'
     );
 }
 add_action('admin_menu', 'cis_add_settings_to_cpt');
@@ -84,6 +118,11 @@ function cis_render_settings_page() {
     ?>
     <div class="wrap">
         <h1>Custom Image Scroller Settings</h1>
+        <form method="post" action="">
+            <?php wp_nonce_field('cis_sync_fields_action', 'cis_sync_fields_nonce'); ?>
+            <p><input type="submit" name="cis_sync_fields" class="button button-primary" value="Sync ACF Fields"></p>
+        </form>
+        <hr>
         <form method="post" action="options.php">
             <?php
             settings_fields('cis_settings_group');
@@ -100,8 +139,8 @@ function cis_render_settings_page() {
 
 function cis_register_settings() {
     register_setting(
-        'cis_settings_group', // Settings group
-        'cis_cleanup_on_delete', // Option name
+        'cis_settings_group',
+        'cis_cleanup_on_delete',
         [
             'type' => 'string',
             'default' => 'no',
@@ -111,25 +150,38 @@ function cis_register_settings() {
         ]
     );
 
-    add_settings_section(
-        'cis_general_settings', // Section ID
-        'General Settings', // Section title
-        null, // Callback
-        'custom-image-scroller' // Page slug
-    );
+    add_settings_section('cis_general_settings', 'General Settings', null, 'custom-image-scroller');
 
     add_settings_field(
-        'cis_cleanup_on_delete', // Field ID
-        'Remove Data on Plugin Delete', // Field title
+        'cis_cleanup_on_delete',
+        'Remove Data on Plugin Delete',
         function () {
             $value = get_option('cis_cleanup_on_delete', 'no');
             echo '<input type="checkbox" name="cis_cleanup_on_delete" value="yes" ' . checked('yes', $value, false) . '> Yes, delete all data when the plugin is removed.';
         },
-        'custom-image-scroller', // Page slug
-        'cis_general_settings' // Section ID
+        'custom-image-scroller',
+        'cis_general_settings'
     );
 }
 add_action('admin_init', 'cis_register_settings');
+
+/* ====================
+SYNC ACF FIELDS
+======================= */
+add_action('admin_post_cis_sync_fields', function () {
+    if (isset($_POST['cis_sync_fields']) && check_admin_referer('cis_sync_fields_action', 'cis_sync_fields_nonce')) {
+        $groups = acf_get_field_groups();
+        foreach ($groups as $group) {
+            if ($group['local'] === 'json') {
+                acf_import_field_group($group);
+                acf_update_field_group($group);
+            }
+        }
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-success is-dismissible"><p>ACF field groups synchronized successfully!</p></div>';
+        });
+    }
+});
 
 /* ====================
 UNINSTALL HOOK
@@ -139,14 +191,11 @@ register_uninstall_hook(__FILE__, 'cis_handle_uninstall');
 function cis_handle_uninstall() {
     $cleanup = get_option('cis_cleanup_on_delete', 'no');
     if ($cleanup === 'yes') {
-        // Remove custom post types, options, and metadata
-        $scrollers = get_posts(array('post_type' => 'image_scroller', 'numberposts' => -1));
+        $scrollers = get_posts(['post_type' => 'image_scroller', 'numberposts' => -1]);
         foreach ($scrollers as $scroller) {
             wp_delete_post($scroller->ID, true);
         }
         delete_option('cis_cleanup_on_delete');
-
-        // Remove ACF field group entries
         if (class_exists('ACF') && function_exists('acf_delete_field_group')) {
             $field_group = acf_get_field_group('group_scroller_fields');
             if ($field_group) {
@@ -155,76 +204,3 @@ function cis_handle_uninstall() {
         }
     }
 }
-
-/* ====================
-ENQUEUE PLUGIN ASSETS
-======================= */
-function cis_enqueue_assets() {
-    wp_enqueue_style('cis-styles', CIS_PLUGIN_URL . 'css/style.css');
-    wp_enqueue_script('cis-scripts', CIS_PLUGIN_URL . 'js/custom.js', ['jquery'], null, true);
-}
-add_action('wp_enqueue_scripts', 'cis_enqueue_assets');
-
-// Define dynamic CSS variable for the SVG cursor
-add_action('wp_head', function () {
-    ?>
-    <style>
-        :root {
-            --white-star-svg: url('<?php echo plugin_dir_url(__FILE__) . 'assets/images/white-star-2-01.svg'; ?>');
-        }
-    </style>
-    <?php
-});
-
-/* ====================
-INCLUDE NECESSARY FILES
-======================= */
-if (class_exists('ACF')) {
-    require_once CIS_PLUGIN_DIR . 'includes/post-type.php'; // Custom Post Type logic
-    require_once CIS_PLUGIN_DIR . 'includes/shortcode.php'; // Shortcode logic
-}
-
-/* ====================
-PLUGIN UPDATE CHECKER
-======================= */
-require_once plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
-
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
-
-// Initialize the update checker
-$updateChecker = PucFactory::buildUpdateChecker(
-    'https://github.com/BirdhouseMN/custom-image-scroller', // GitHub repository URL
-    __FILE__,                                              // Main plugin file
-    'custom-image-scroller'                                // Plugin slug
-);
-
-// Optional: Set the branch to use for updates
-$updateChecker->setBranch('main'); // Ensure this matches your release branch
-
-/* ====================
-DEBUG TESTING CODE
-======================= */
-add_action('acf/init', function () {
-    $json_paths = apply_filters('acf/settings/load_json', []);
-    error_log('ACF JSON Paths: ' . print_r($json_paths, true));
-
-    $field_groups = acf_get_field_groups();
-    error_log('ACF Field Groups: ' . print_r($field_groups, true));
-
-    $json_files = glob(CIS_PLUGIN_DIR . 'acf-json/*.json');
-    error_log('ACF JSON Files Found: ' . print_r($json_files, true));
-
-    if (!empty($json_files)) {
-        foreach ($json_files as $file) {
-            $json_data = file_get_contents($file);
-            $fields = json_decode($json_data, true);
-
-            if (!empty($fields)) {
-                acf_add_local_field_group($fields);
-                error_log('Field group registered programmatically: ' . ($fields['title'] ?? 'Untitled'));
-            } else {
-                error_log('Failed to decode JSON: ' . $file);
-            }
-        }
-    }
-});
