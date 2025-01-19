@@ -1,34 +1,41 @@
 <?php
-/* ====================
-Render Image Scroller Shortcode
-======================= */
+function cis_render_image_scroller($atts, $content = '', $tag = '') {
+    $atts = shortcode_atts(['id' => null], $atts, $tag);
 
-// Shortcode logic to render the image scroller
-function cis_render_image_scroller($atts) {
-    $atts = shortcode_atts(['id' => null], $atts, 'image_scroller');
-    if (!$atts['id']) return ''; // No ID provided
+    // Validate the provided scroller ID
+    if (!$atts['id']) {
+        return '<p>Error: No scroller ID provided.</p>';
+    }
 
     $scroller_id = intval($atts['id']);
-    $images = get_field('scroller_images', $scroller_id, true);
-    $direction = get_field('scrolling_direction', $scroller_id);
-    $direction_class = ($direction === 'Horizontal') ? 'scroll-horizontal' : 'scroll-vertical';
+    $images = get_field('scroller_images', $scroller_id);
 
-    // Log scroller direction for debugging
-    error_log("Scroller ID: $scroller_id, Direction: " . ($direction ? $direction : 'not set'));
+    // Validate that images is an array
+    if (!is_array($images) || empty($images)) {
+        return '<p>Error: No images found for this scroller.</p>';
+    }
 
-    if (!$images) return '<p>No images found for this scroller.</p>';
+    $direction = get_field('scrolling_direction', $scroller_id) ?? 'horizontal';
+    $direction_class = ($direction === 'horizontal') ? 'scroll-horizontal' : 'scroll-vertical';
 
-    $output = '<div class="scrolling-images-wrap ' . esc_attr($direction_class) . '" data-scroller-id="' . esc_attr($scroller_id) . '">';
+    // Begin output buffering for cleaner HTML
+    $output = '<div class="scrolling-images-wrap ' . esc_attr($direction_class) . '">';
     foreach ($images as $image) {
-        $output .= '<div class="image-row">';
-        $output .= '<img src="' . esc_url($image['url']) . '" alt="' . esc_attr($image['alt']) . '">';
-        $output .= '</div>';
+        // Ensure the image array has the necessary keys
+        if (isset($image['url']) && isset($image['alt'])) {
+            $output .= '<div class="image-row">';
+            $output .= '<img src="' . esc_url($image['url']) . '" alt="' . esc_attr($image['alt']) . '">';
+            $output .= '</div>';
+        } else {
+            $output .= '<div class="image-row"><p>Error: Invalid image data.</p></div>';
+        }
     }
     $output .= '</div>';
 
     return $output;
 }
 add_shortcode('image_scroller', 'cis_render_image_scroller');
+
 
 /* ====================
 Admin Shortcode Meta Box

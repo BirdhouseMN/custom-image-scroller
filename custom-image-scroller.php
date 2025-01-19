@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Custom Image Scroller
  * Description: A plugin to create and manage image scrollers with ACF fields.
- * Version: 3.5.0
+ * Version: 3.5.2
  * Author: Birdhouse Web Design
  */
 
@@ -29,6 +29,10 @@ function cis_missing_acf_notice() {
 /* ====================
 PRE-PACKAGED ACF FIELDS
 ======================= */
+add_filter('acf/settings/save_json', function($path) {
+    return CIS_PLUGIN_DIR . 'acf-json';
+});
+
 add_filter('acf/settings/load_json', function($paths) {
     $acf_json_path = CIS_PLUGIN_DIR . 'acf-json';
     if (is_dir($acf_json_path)) {
@@ -37,6 +41,28 @@ add_filter('acf/settings/load_json', function($paths) {
         error_log('ACF JSON folder not found: ' . $acf_json_path);
     }
     return $paths;
+});
+
+add_action('admin_init', function () {
+    $groups = acf_get_field_groups();
+    $sync = [];
+
+    foreach ($groups as $group) {
+        $local = acf_maybe_get($group, 'local', false);
+        $modified = acf_maybe_get($group, 'modified', 0);
+        $private = acf_maybe_get($group, 'private', false);
+
+        if ($local === 'json' && !$private) {
+            if (!$group['ID'] || ($modified && $modified > get_post_modified_time('U', true, $group['ID'], true))) {
+                $sync[$group['key']] = $group;
+            }
+        }
+    }
+
+    foreach ($sync as $key => $group) {
+        acf_import_field_group($group);
+        error_log('ACF Field Group Synced: ' . $group['title']);
+    }
 });
 
 /* ====================
@@ -185,10 +211,20 @@ add_action('acf/init', function () {
     $field_groups = acf_get_field_groups();
     error_log('ACF Field Groups: ' . print_r($field_groups, true));
 
-    if (function_exists('acf_sync_local_field_groups')) {
-        error_log('Syncing ACF Field Groups.');
-        acf_sync_local_field_groups();
-    } else {
-        error_log('ACF sync function not available.');
+    $json_files = glob(CIS_PLUGIN_DIR . 'acf-json/*.json');
+    error_log('ACF JSON Files Found: ' . print_r($json_files, true));
+
+    if (!empty($json_files)) {
+        foreach ($json_files as $file) {
+            $json_data = file_get_contents($file);
+            $fields = json_decode($json_data, true);
+
+            if (!empty($fields)) {
+                acf_add_local_field_group($fields);
+                error_log('Field group registered programmatically: ' . ($fields['title'] ?? 'Untitled'));
+            } else {
+                error_log('Failed to decode JSON: ' . $file);
+            }
+        }
     }
 });
