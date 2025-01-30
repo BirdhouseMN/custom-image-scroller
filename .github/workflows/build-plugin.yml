@@ -18,7 +18,8 @@ jobs:
       - name: Create plugin ZIP (Fix Nested Folder Issue)
         run: |
           mkdir temp
-          mv * temp
+          shopt -s extglob
+          mv !(temp) temp/  # ✅ Move everything EXCEPT `temp`
           cd temp
           zip -r ../custom-image-scroller.zip . -x "*.git*" -x "*.github*"
 
