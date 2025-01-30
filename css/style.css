@@ -1,7 +1,7 @@
 /* ====================
 IMAGE SCROLLERS STYLES
 ======================= */
-body {border: 1px solid teal;}
+body {border: 1px solid red;}
 .scrolling-images-wrap {
     position: relative;
     overflow: hidden;
