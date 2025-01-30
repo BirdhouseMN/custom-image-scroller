@@ -3,7 +3,7 @@ name: Build WordPress Plugin ZIP
 on:
   push:
     branches:
-      - main  # Change if using a different branch
+      - main  # Change this if using a different branch
 
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
           zip -r ../custom-image-scroller.zip . -x "*.git*" -x "*.github*"
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v4  # ✅ Updated to latest version
+        uses: actions/upload-artifact@v4  # ✅ Latest version
         with:
           name: custom-image-scroller
           path: custom-image-scroller.zip
