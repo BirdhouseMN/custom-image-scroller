@@ -3,23 +3,27 @@ name: Build WordPress Plugin ZIP
 on:
   push:
     branches:
-      - main  # Change this if using a different branch
+      - main  # Change if using a different branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # Latest version
+        uses: actions/checkout@v4  # ✅ Ensures the latest version is used
 
       - name: Remove `.git` folder
         run: rm -rf .git
 
-      - name: Create plugin ZIP
-        run: zip -r custom-image-scroller.zip . -x "*.git*" -x "*.github*"
+      - name: Create plugin ZIP (Fix Nested Folder Issue)
+        run: |
+          mkdir temp
+          mv * temp
+          cd temp
+          zip -r ../custom-image-scroller.zip . -x "*.git*" -x "*.github*"
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4  # ✅ Updated to latest version
         with:
           name: custom-image-scroller
           path: custom-image-scroller.zip
