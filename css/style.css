@@ -1,6 +1,7 @@
 /* ====================
 IMAGE SCROLLERS STYLES
 ======================= */
+
 .scrolling-images-wrap {
     position: relative;
     overflow: hidden;
@@ -15,7 +16,9 @@ IMAGE SCROLLERS STYLES
     cursor: var(--white-star-svg), auto;
 }
 
-/* Vertical Layout */
+/* ====================
+VERTICAL LAYOUT
+======================= */
 .scroll-vertical.scrolling-images-wrap {
     height: 70vh;
     white-space: normal;
@@ -37,7 +40,9 @@ IMAGE SCROLLERS STYLES
     border-radius: 10px;
 }
 
-/* Horizontal Layout */
+/* ====================
+HORIZONTAL LAYOUT
+======================= */
 .scroll-horizontal.scrolling-images-wrap {
     width: 100%;
     height: auto;
