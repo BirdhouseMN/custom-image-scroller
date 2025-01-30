@@ -12,12 +12,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug Folder Structure
+        run: ls -lah  # ✅ This will list all files & folders in the workspace
+
       - name: Remove `.git` folder
         run: rm -rf .git
 
-      - name: Create plugin ZIP (Fix Nested Folder Issue)
+      - name: Create plugin ZIP
         run: |
-          zip -r custom-image-scroller.zip custom-image-scroller -x "*.git*" -x "*.github*"
+          ls -lah  # ✅ Another check to confirm structure before zipping
+          zip -r custom-image-scroller.zip . -x "*.git*" -x "*.github*"
 
       - name: Upload ZIP as artifact
         uses: actions/upload-artifact@v4
