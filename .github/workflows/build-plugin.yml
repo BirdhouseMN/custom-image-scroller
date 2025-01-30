@@ -10,21 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # ✅ Ensures the latest version is used
+        uses: actions/checkout@v4
 
       - name: Remove `.git` folder
         run: rm -rf .git
 
       - name: Create plugin ZIP (Fix Nested Folder Issue)
         run: |
-          mkdir temp
-          shopt -s extglob
-          mv !(temp) temp/  # ✅ Move everything EXCEPT `temp`
-          cd temp
-          zip -r ../custom-image-scroller.zip . -x "*.git*" -x "*.github*"
+          zip -r custom-image-scroller.zip custom-image-scroller -x "*.git*" -x "*.github*"
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v4  # ✅ Latest version
+        uses: actions/upload-artifact@v4
         with:
           name: custom-image-scroller
           path: custom-image-scroller.zip
