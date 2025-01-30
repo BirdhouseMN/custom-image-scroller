@@ -4,7 +4,7 @@ jQuery(document).ready(function ($) {
     INITIALIZATION
     ======================= */
 
-    console.log("✅ Custom JS Loaded!");
+    console.log("✅ Optimized Custom JS Loaded!");
 
     var $imageContainers = $('.scrolling-images-wrap');
 
@@ -35,6 +35,67 @@ jQuery(document).ready(function ($) {
     }
 
     /* ====================
+    AUTO-SCROLL FUNCTION (Fixed & Optimized)
+    ======================= */
+
+    function scrollContainer($container) {
+        if (!$container.length || $container.hasClass('dragging')) return; // Disable auto-scroll when dragging
+
+        let hasHorizontalClass = $container.hasClass('scroll-horizontal');
+        let hasVerticalClass = $container.hasClass('scroll-vertical');
+
+        let imageScrollPosition = hasHorizontalClass ? $container.scrollLeft() : $container.scrollTop();
+        let baseSpeed = 0.15;
+        let hoverSpeed = baseSpeed * 2;
+        let currentSpeed = baseSpeed;
+
+        function animateScroll() {
+            if ($container.hasClass('dragging') || !$container.data('scrollRunning')) return; // Stop if dragging or not running
+
+            if (hasHorizontalClass) {
+                imageScrollPosition += currentSpeed;
+                $container.scrollLeft(imageScrollPosition);
+
+                const scrollWidth = $container[0].scrollWidth / 3;
+                if (imageScrollPosition >= scrollWidth) {
+                    imageScrollPosition -= scrollWidth;
+                    $container.scrollLeft(imageScrollPosition);
+                }
+            }
+
+            if (hasVerticalClass) {
+                imageScrollPosition += currentSpeed;
+                $container.scrollTop(imageScrollPosition);
+
+                const scrollHeight = $container[0].scrollHeight / 3;
+                if (imageScrollPosition >= scrollHeight) {
+                    imageScrollPosition -= scrollHeight;
+                    $container.scrollTop(imageScrollPosition);
+                }
+            }
+
+            requestAnimationFrame(animateScroll);
+        }
+
+        // 🔥 Optimized hover event handling (removes unnecessary triggers)
+        $container.on('mouseenter', function () {
+            if (!$container.hasClass('dragging')) {
+                currentSpeed = hoverSpeed;
+            }
+        });
+
+        $container.on('mouseleave', function () {
+            if (!$container.hasClass('dragging')) {
+                currentSpeed = baseSpeed;
+            }
+        });
+
+        // Start auto-scrolling only if in view
+        $container.data('scrollRunning', true);
+        requestAnimationFrame(animateScroll);
+    }
+
+    /* ====================
     HANDLE SCROLLING & DRAGGING
     ======================= */
 
@@ -46,7 +107,7 @@ jQuery(document).ready(function ($) {
         let startX, startY, lastScrollLeft, lastScrollTop;
 
         /* ====================
-        DRAG FUNCTIONALITY (Fixed)
+        DRAG FUNCTIONALITY (Fixed & Optimized)
         ======================= */
 
         function startDrag(e) {
@@ -98,57 +159,23 @@ jQuery(document).ready(function ($) {
         $container.on('mousedown touchstart', startDrag);
         $(document).on('mousemove touchmove', onDrag);
         $(document).on('mouseup touchend touchcancel', endDrag);
-
-        /* ====================
-        AUTO-SCROLL FUNCTION (Fixed)
-        ======================= */
-
-        let imageScrollPosition = 0;
-        let baseSpeed = 0.15;
-        let hoverSpeed = baseSpeed * 2;
-        let currentSpeed = baseSpeed;
-
-        function scrollContainer($container) {
-            if (isDragging) return; // Disable auto-scroll when dragging
-
-            if (hasHorizontalClass) {
-                imageScrollPosition += currentSpeed;
-                $container.scrollLeft(imageScrollPosition);
-
-                const scrollWidth = $container[0].scrollWidth / 3;
-                if (imageScrollPosition >= scrollWidth) {
-                    imageScrollPosition -= scrollWidth;
-                    $container.scrollLeft(imageScrollPosition);
-                }
-            }
-
-            if (hasVerticalClass) {
-                imageScrollPosition += currentSpeed;
-                $container.scrollTop(imageScrollPosition);
-
-                const scrollHeight = $container[0].scrollHeight / 3;
-                if (imageScrollPosition >= scrollHeight) {
-                    imageScrollPosition -= scrollHeight;
-                    $container.scrollTop(imageScrollPosition);
-                }
-            }
-
-            requestAnimationFrame(() => scrollContainer($container));
-        }
-
-        // 🔥 Speed up scrolling on hover
-        $container.hover(
-            function () {
-                currentSpeed = hoverSpeed;
-            },
-            function () {
-                currentSpeed = baseSpeed;
-            }
-        );
-
-        // Start auto-scrolling
-        scrollContainer($container);
     }
+
+    /* ====================
+    PERFORMANCE OPTIMIZATION: STOP AUTO-SCROLL WHEN NOT IN VIEW
+    ======================= */
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const $container = $(entry.target);
+            if (entry.isIntersecting) {
+                $container.data('scrollRunning', true);
+                requestAnimationFrame(() => scrollContainer($container));
+            } else {
+                $container.data('scrollRunning', false);
+            }
+        });
+    });
 
     /* ====================
     LOOP THROUGH SCROLLERS & INITIALIZE
@@ -158,6 +185,19 @@ jQuery(document).ready(function ($) {
         var $container = $(this);
         initializeSlides($container);
         setupScroller($container);
+        observer.observe($container[0]); // Optimize performance
+    });
+
+    /* ====================
+    CLEANUP EVENT LISTENERS WHEN NOT NEEDED
+    ======================= */
+
+    $(window).on('beforeunload', function () {
+        $imageContainers.each(function () {
+            var $container = $(this);
+            $container.off('mouseenter mouseleave');
+            $(document).off('mousemove touchmove mouseup touchend touchcancel');
+        });
     });
 
 });
